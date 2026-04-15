@@ -1,0 +1,291 @@
+:root {
+  color: #14213d;
+  background: #f4f7fb;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: linear-gradient(180deg, #eef3fb 0%, #f8fafd 100%);
+  color: #14213d;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+input,
+select {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #d4dceb;
+  border-radius: 12px;
+  background: #fff;
+}
+
+label {
+  display: block;
+  color: #33415c;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid #e3e9f3;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+}
+
+.brand {
+  display: inline-block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0a2540;
+}
+
+.topbar-subtitle {
+  margin: 0.2rem 0 0;
+  color: #6b7a90;
+  font-size: 0.9rem;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-chip {
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  background: #edf3ff;
+  color: #1d4ed8;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.page-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.auth-layout {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 88px);
+}
+
+.dashboard-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.panel,
+.summary-card {
+  background: #ffffff;
+  border: 1px solid #e4eaf4;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(19, 35, 68, 0.08);
+}
+
+.panel {
+  padding: 1.5rem;
+}
+
+.auth-panel {
+  width: min(100%, 460px);
+}
+
+.panel-header {
+  margin-bottom: 1.25rem;
+}
+
+.panel-header h1,
+.panel-header h2,
+.hero-panel h1 {
+  margin: 0;
+  color: #0a2540;
+}
+
+.panel-header p,
+.hero-copy,
+.summary-card span,
+.summary-card p,
+.auth-footer,
+.empty-state {
+  color: #66758f;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+}
+
+.hero-panel {
+  min-height: 180px;
+}
+
+.eyebrow {
+  margin: 0 0 0.6rem;
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero-copy {
+  max-width: 38rem;
+  margin-top: 0.8rem;
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.summary-card p,
+.summary-card span,
+.summary-card strong {
+  margin: 0;
+}
+
+.summary-card strong {
+  margin: 0.4rem 0;
+  font-size: 2rem;
+  color: #0a2540;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.primary-button,
+.secondary-button,
+.button-link {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.8rem 1.1rem;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.primary-button {
+  background: #1d4ed8;
+  color: white;
+}
+
+.secondary-button,
+.button-link {
+  background: #eef3ff;
+  color: #1d4ed8;
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.button-link:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.form-error {
+  margin: 0;
+  color: #b42318;
+  font-weight: 600;
+}
+
+.auth-footer {
+  margin: 1rem 0 0;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.95rem 0.75rem;
+  border-bottom: 1px solid #e8edf5;
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  color: #5f6f86;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: #ecfdf3;
+  color: #027a48;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+@media (max-width: 860px) {
+  .topbar,
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .page-content {
+    padding: 1.25rem;
+  }
+}
