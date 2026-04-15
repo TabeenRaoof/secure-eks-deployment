@@ -1,0 +1,21 @@
+# Copy this file to terraform.tfvars and update the values.
+# WARNING: terraform.tfvars is in .gitignore — never commit secrets.
+
+aws_region     = "us-west-2"
+project_name   = "fintech-secure"
+environment    = "dev"
+
+vpc_cidr        = "10.0.0.0/16"
+cluster_version = "1.29"
+
+node_instance_types = ["t3.medium"]
+node_desired_size   = 2
+node_min_size       = 1
+node_max_size       = 4
+
+# Restrict API access to your team's IP addresses for security.
+# Replace with actual CIDRs before deploying.
+endpoint_public_access = true
+public_access_cidrs    = ["0.0.0.0/0"]
+
+enable_flow_logs = true
