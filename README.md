@@ -166,7 +166,7 @@ Type `yes` when prompted. This removes all AWS resources created by Terraform.
 
 ## Team Responsibilities — Next Phases
 
-### Phase 3: Application Deployment (Teammate A)
+### Phase 3: Application Deployment 
 
 Deploy the multi-tier application into the EKS cluster:
 - Frontend (React or static web)
@@ -175,19 +175,19 @@ Deploy the multi-tier application into the EKS cluster:
 - Use Kubernetes Deployments, Services, and Ingress
 - See [`kubernetes/README.md`](kubernetes/README.md) for details
 
-### Phase 4: Identity & Access Management (Teammate A)
+### Phase 4: Identity & Access Management 
 
 - Configure Kubernetes RBAC (Roles, RoleBindings)
 - Set up IRSA for application pods (foundation already in `terraform/modules/iam/`)
 - Implement `aws-auth` ConfigMap for cluster access control
 
-### Phase 5: Network Security (Teammate B)
+### Phase 5: Network Security 
 
 - Apply Kubernetes Network Policies to restrict pod-to-pod communication
 - Review and tighten Security Group rules based on actual traffic patterns
 - Test network isolation between frontend, backend, and database pods
 
-### Phase 6: Data Security (Teammate B)
+### Phase 6: Data Security 
 
 - Configure TLS/HTTPS for the application (cert-manager + Let's Encrypt or ACM)
 - Store application secrets in AWS Secrets Manager
@@ -200,7 +200,7 @@ Deploy the multi-tier application into the EKS cluster:
 - Enforce Pod Security Standards (restricted profile)
 - Ensure all containers run as non-root with read-only root filesystems
 
-### Phase 8: Monitoring & Logging (Teammate B)
+### Phase 8: Monitoring & Logging 
 
 - Enable CloudWatch Container Insights
 - Optionally deploy Prometheus + Grafana
