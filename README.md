@@ -193,7 +193,7 @@ Deploy the multi-tier application into the EKS cluster:
 - Store application secrets in AWS Secrets Manager
 - Verify encryption at rest is active for EBS and any RDS instances
 
-### Phase 7: Container Security (Teammate A or B)
+### Phase 7: Container Security 
 
 - Set up Amazon ECR with image scanning
 - Scan images with Trivy in CI/CD
