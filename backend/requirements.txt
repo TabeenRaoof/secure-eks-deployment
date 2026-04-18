@@ -2,6 +2,7 @@ Flask
 Flask-Cors
 Flask-JWT-Extended
 Flask-SQLAlchemy
+boto3
 gunicorn
 psycopg2-binary
 python-dotenv

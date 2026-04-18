@@ -78,3 +78,8 @@ The application should be a multi-tier fintech app with:
 6. Frontend deployment + service
 7. Ingress controller + rules
 8. Network policies
+
+## Phase 6 Files Added
+
+- `secrets/app-backend-serviceaccount.yaml` — IRSA service account for backend pod
+- `ingress/app-ingress-acm.yaml` — HTTPS ingress template using ACM certificate

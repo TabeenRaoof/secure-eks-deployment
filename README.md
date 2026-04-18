@@ -164,6 +164,19 @@ Type `yes` when prompted. This removes all AWS resources created by Terraform.
 
 ---
 
+## Phase 6 Quick Start (Data Security)
+
+This repository includes baseline Phase 6 assets:
+
+- Terraform-managed Secrets Manager secret container (`fintech-secure-dev-backend`)
+- IRSA role policy scoped to the backend secret
+- Backend config support for Secrets Manager (`APP_SECRETS_NAME`)
+- HTTPS ingress template with ACM annotations in `kubernetes/ingress/app-ingress-acm.yaml`
+
+See the full runbook in [`docs/phase6-data-security.md`](docs/phase6-data-security.md).
+
+---
+
 ## Team Responsibilities — Next Phases
 
 ### Phase 3: Application Deployment (Teammate A)

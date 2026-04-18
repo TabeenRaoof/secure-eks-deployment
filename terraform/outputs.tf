@@ -49,6 +49,16 @@ output "app_workload_role_arn" {
   value       = aws_iam_role.app_workload.arn
 }
 
+output "app_backend_secret_name" {
+  description = "Secrets Manager secret name for backend app config"
+  value       = aws_secretsmanager_secret.app_backend.name
+}
+
+output "app_backend_secret_arn" {
+  description = "Secrets Manager secret ARN for backend app config"
+  value       = aws_secretsmanager_secret.app_backend.arn
+}
+
 output "configure_kubectl" {
   description = "Command to configure kubectl for this cluster"
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
