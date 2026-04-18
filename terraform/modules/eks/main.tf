@@ -96,6 +96,7 @@ resource "aws_eks_node_group" "main" {
   node_role_arn   = var.node_role_arn
   subnet_ids      = var.private_subnet_ids
   instance_types  = var.node_instance_types
+  ami_type        = "AL2023_x86_64_STANDARD"
 
   launch_template {
     id      = aws_launch_template.nodes.id
