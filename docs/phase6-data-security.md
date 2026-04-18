@@ -88,6 +88,21 @@ Capture evidence:
 - Ingress manifest with HTTPS annotations
 - Browser/network screenshot proving HTTPS access
 
+## 4.1) If You Do Not Own a Custom Domain Yet (Vercel + EKS Path)
+
+If you only have a Vercel-managed hostname (for example `*.vercel.app`) and cannot add custom DNS validation records for ACM:
+
+1. Keep frontend hosted on Vercel.
+2. Expose backend through EKS/ALB endpoint.
+3. Set frontend `VITE_API_URL` to the ALB endpoint.
+4. Set backend `CORS_ORIGINS` to your Vercel domain in Secrets Manager.
+5. Document TLS manifest readiness and note that ACM issuance is pending custom DNS ownership.
+
+Example values:
+
+- `VITE_API_URL=http://<alb-dns-name>/api`
+- `CORS_ORIGINS=https://secure-eks-deployment.vercel.app`
+
 ## 5) Verify Encryption at Rest
 
 ### EKS secrets encryption (KMS)
@@ -135,3 +150,12 @@ aws rds describe-db-instances \
 - EKS encryption config output
 - EBS volume `Encrypted=true`
 - RDS `StorageEncrypted=true` (if applicable)
+
+### Recommended Evidence if ACM Cannot Be Issued Yet
+
+- Secrets Manager secret with backend keys configured
+- Backend IRSA role and service account mapping
+- EKS secrets encryption config (KMS)
+- EBS encryption evidence (`Encrypted=true`)
+- Ingress manifest showing TLS annotations and ACM integration design
+- Short note explaining DNS ownership limitation for final ACM validation

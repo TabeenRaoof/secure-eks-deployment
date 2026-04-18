@@ -175,6 +175,13 @@ This repository includes baseline Phase 6 assets:
 
 See the full runbook in [`docs/phase6-data-security.md`](docs/phase6-data-security.md).
 
+If you are hosting frontend on Vercel without a custom domain yet, use:
+
+- Frontend env: `VITE_API_URL=http://<eks-alb-dns>/api`
+- Backend secret: `CORS_ORIGINS=https://<your-vercel-domain>`
+
+This allows a working split deployment (Vercel frontend + EKS backend) while keeping the ACM-based TLS ingress configuration ready for a custom domain later.
+
 ---
 
 ## Team Responsibilities — Next Phases
