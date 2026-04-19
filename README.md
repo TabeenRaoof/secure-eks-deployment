@@ -164,6 +164,26 @@ Type `yes` when prompted. This removes all AWS resources created by Terraform.
 
 ---
 
+## Phase 6 Quick Start (Data Security)
+
+This repository includes baseline Phase 6 assets:
+
+- Terraform-managed Secrets Manager secret container (`fintech-secure-dev-backend`)
+- IRSA role policy scoped to the backend secret
+- Backend config support for Secrets Manager (`APP_SECRETS_NAME`)
+- HTTPS ingress template with ACM annotations in `kubernetes/ingress/app-ingress-acm.yaml`
+
+See the full runbook in [`docs/phase6-data-security.md`](docs/phase6-data-security.md).
+
+If you are hosting frontend on Vercel without a custom domain yet, use:
+
+- Frontend env: `VITE_API_URL=http://<eks-alb-dns>/api`
+- Backend secret: `CORS_ORIGINS=https://<your-vercel-domain>`
+
+This allows a working split deployment (Vercel frontend + EKS backend) while keeping the ACM-based TLS ingress configuration ready for a custom domain later.
+
+---
+
 ## Team Responsibilities — Next Phases
 
 ### Phase 3: Application Deployment 

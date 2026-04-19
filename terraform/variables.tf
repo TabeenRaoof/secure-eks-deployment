@@ -69,3 +69,9 @@ variable "enable_flow_logs" {
   type        = bool
   default     = true
 }
+
+variable "app_secrets_name" {
+  description = "Optional override for the application Secrets Manager secret name"
+  type        = string
+  default     = ""
+}

@@ -16,12 +16,30 @@ data "aws_availability_zones" "available" {
 
 locals {
   cluster_name       = "${var.project_name}-${var.environment}"
+  app_secret_name    = var.app_secrets_name != "" ? var.app_secrets_name : "${var.project_name}-${var.environment}-backend"
   availability_zones = slice(data.aws_availability_zones.available.names, 0, 3)
 
   common_tags = {
     Project     = var.project_name
     Environment = var.environment
   }
+}
+
+# -----------------------------------------------------------------------------
+# Phase 6: Application Secret Container in AWS Secrets Manager
+# Secret values are written manually or via CI; Terraform only manages the
+# encrypted secret object and IAM access boundaries.
+# -----------------------------------------------------------------------------
+
+resource "aws_secretsmanager_secret" "app_backend" {
+  name                    = local.app_secret_name
+  description             = "Backend application secret bundle"
+  kms_key_id              = module.security.kms_key_arn
+  recovery_window_in_days = 7
+
+  tags = merge(local.common_tags, {
+    Name = local.app_secret_name
+  })
 }
 
 # -----------------------------------------------------------------------------
@@ -139,7 +157,17 @@ resource "aws_iam_role_policy" "app_workload_secrets" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]
-        Resource = "arn:aws:secretsmanager:*:*:secret:${var.project_name}-${var.environment}-*"
+        Resource = [
+          aws_secretsmanager_secret.app_backend.arn,
+          "${aws_secretsmanager_secret.app_backend.arn}*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt"
+        ]
+        Resource = module.security.kms_key_arn
       }
     ]
   })
