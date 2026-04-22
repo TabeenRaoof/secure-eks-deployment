@@ -1,18 +1,14 @@
 name: Container Security Scan
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - '.github/workflows/trivy-scan.yml'
+  workflow_dispatch:
   pull_request:
     branches: [main]
     paths:
       - 'backend/**'
       - 'frontend/**'
-  workflow_dispatch:
+      - 'kubernetes/**'
+      - '.github/workflows/trivy-scan.yml'
 
 permissions:
   contents: read
@@ -38,6 +34,7 @@ jobs:
 
       - name: Upload SARIF
         if: always()
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-fs.sarif
@@ -77,6 +74,7 @@ jobs:
 
       - name: Upload SARIF
         if: always()
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-${{ matrix.component }}.sarif

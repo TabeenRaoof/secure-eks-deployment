@@ -1,14 +1,9 @@
 name: Build and Push Images to ECR
 
 on:
-  push:
-    branches: [main]
-    tags: ['v*']
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - '.github/workflows/build-and-push.yml'
   workflow_dispatch:
+  push:
+    tags: ['v*']
 
 permissions:
   id-token: write
