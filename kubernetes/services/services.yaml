@@ -1,0 +1,59 @@
+# ---------------------------------------------------------------------------
+# Services for the multi-tier fintech application.
+# All services are ClusterIP (internal) — external access is via the ALB
+# Ingress only.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-svc
+  namespace: fintech-app
+  labels:
+    app: frontend
+    project: fintech-secure
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-svc
+  namespace: fintech-app
+  labels:
+    app: backend
+    project: fintech-secure
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: fintech-app
+  labels:
+    app: db
+    project: fintech-secure
+spec:
+  type: ClusterIP
+  clusterIP: None  # headless service for StatefulSet
+  selector:
+    app: db
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP

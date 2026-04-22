@@ -1,0 +1,74 @@
+name: Build and Push Images to ECR
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/build-and-push.yml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-west-2
+
+jobs:
+  build-push:
+    name: Build and push ${{ matrix.component }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GHA_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: meta
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build, scan, and push ${{ matrix.component }}
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPO: fintech-secure/${{ matrix.component }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          docker build -t $REGISTRY/$REPO:$TAG ./${{ matrix.component }}
+          docker tag $REGISTRY/$REPO:$TAG $REGISTRY/$REPO:latest
+
+      - name: Final Trivy gate before push
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ steps.ecr.outputs.registry }}/fintech-secure/${{ matrix.component }}:${{ steps.meta.outputs.tag }}
+          severity: CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+
+      - name: Push to ECR
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPO: fintech-secure/${{ matrix.component }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          docker push $REGISTRY/$REPO:$TAG
+          docker push $REGISTRY/$REPO:latest

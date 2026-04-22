@@ -1,10 +1,39 @@
+# ---------------------------------------------------------------------------
+# Default Deny-All (fintech-app namespace)
+# Blocks all ingress and egress for pods in the namespace. Other policies
+# then explicitly allow the required traffic flows (zero-trust default).
+# ---------------------------------------------------------------------------
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-all
-  namespace: default
+  namespace: fintech-app
 spec:
   podSelector: {}
   policyTypes:
     - Ingress
     - Egress
+---
+# Allow all pods in the namespace to resolve DNS (required for service discovery).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: fintech-app
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

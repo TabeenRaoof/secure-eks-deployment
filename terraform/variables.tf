@@ -75,3 +75,21 @@ variable "app_secrets_name" {
   type        = string
   default     = ""
 }
+
+variable "ecr_force_delete" {
+  description = "Allow Terraform to delete ECR repositories that still contain images (useful for dev/demo)"
+  type        = bool
+  default     = true
+}
+
+variable "alarm_email" {
+  description = "Email address subscribed to the alarms SNS topic (leave empty to skip subscription)"
+  type        = string
+  default     = ""
+}
+
+variable "enable_container_insights" {
+  description = "Install the CloudWatch Container Insights EKS add-on"
+  type        = bool
+  default     = true
+}

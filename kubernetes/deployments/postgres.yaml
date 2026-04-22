@@ -1,0 +1,115 @@
+# ---------------------------------------------------------------------------
+# PostgreSQL Database (in-cluster StatefulSet)
+# NOTE: For production, use Amazon RDS with KMS encryption instead.
+# This StatefulSet is provided for development/demo only.
+#
+# - Runs as postgres user (UID 999)
+# - Data persisted to encrypted gp3 EBS volume via StorageClass
+# - No external exposure (ClusterIP service only, blocked by NetworkPolicy)
+# - Credentials pulled from AWS Secrets Manager via sidecar pattern
+#   (for demo: Kubernetes Secret — replace with external-secrets-operator)
+# ---------------------------------------------------------------------------
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: encrypted-gp3
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  encrypted: "true"
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-credentials
+  namespace: fintech-app
+type: Opaque
+stringData:
+  # Demo-only placeholder. In production, sync from AWS Secrets Manager
+  # using External Secrets Operator or a sidecar container.
+  POSTGRES_USER: fintech_app
+  POSTGRES_PASSWORD: CHANGE_ME_USE_SECRETS_MANAGER
+  POSTGRES_DB: fintech
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: fintech-app
+  labels:
+    app: db
+    tier: database
+    project: fintech-secure
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+        tier: database
+        project: fintech-secure
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - name: postgres
+              containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-credentials
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 999
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "fintech_app", "-d", "fintech"]
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "fintech_app", "-d", "fintech"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: encrypted-gp3
+        resources:
+          requests:
+            storage: 10Gi

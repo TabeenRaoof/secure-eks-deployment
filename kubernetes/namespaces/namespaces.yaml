@@ -1,0 +1,31 @@
+# ---------------------------------------------------------------------------
+# Namespace: fintech-app
+# All application workloads (frontend, backend, database) run here.
+# Isolated from system namespaces and monitoring.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fintech-app
+  labels:
+    project: fintech-secure
+    environment: dev
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+# ---------------------------------------------------------------------------
+# Namespace: monitoring
+# Observability stack (Prometheus, Grafana, log collectors).
+# Separated so monitoring tools don't share RBAC with app workloads.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    project: fintech-secure
+    environment: dev
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

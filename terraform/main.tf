@@ -131,7 +131,7 @@ resource "aws_iam_role" "app_workload" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${replace(module.eks.oidc_provider_url, "https://", "")}:sub" = "system:serviceaccount:default:app-backend"
+            "${replace(module.eks.oidc_provider_url, "https://", "")}:sub" = "system:serviceaccount:fintech-app:app-backend"
             "${replace(module.eks.oidc_provider_url, "https://", "")}:aud" = "sts.amazonaws.com"
           }
         }
@@ -142,6 +142,37 @@ resource "aws_iam_role" "app_workload" {
   tags = merge(local.common_tags, {
     Name = "${var.project_name}-${var.environment}-app-workload-role"
   })
+}
+
+# -----------------------------------------------------------------------------
+# Phase 7: Container Security — ECR with enhanced scanning
+# -----------------------------------------------------------------------------
+
+module "container_security" {
+  source = "./modules/container-security"
+
+  project_name = var.project_name
+  kms_key_arn  = module.security.kms_key_arn
+  force_delete = var.ecr_force_delete
+  tags         = local.common_tags
+}
+
+# -----------------------------------------------------------------------------
+# Phase 8: Monitoring & Logging — GuardDuty, CloudWatch alarms, Container Insights
+# -----------------------------------------------------------------------------
+
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  project_name                = var.project_name
+  environment                 = var.environment
+  cluster_name                = module.eks.cluster_name
+  eks_log_group_name          = "/aws/eks/${module.eks.cluster_name}/cluster"
+  node_autoscaling_group_name = module.eks.node_group_autoscaling_group_name
+  kms_key_arn                 = module.security.kms_key_arn
+  alarm_email                 = var.alarm_email
+  enable_container_insights   = var.enable_container_insights
+  tags                        = local.common_tags
 }
 
 resource "aws_iam_role_policy" "app_workload_secrets" {

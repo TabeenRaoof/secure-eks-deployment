@@ -1,0 +1,117 @@
+# ---------------------------------------------------------------------------
+# ClusterRoleBinding: cluster-admin-binding
+# Grants full cluster admin to the platform-admins group.
+# Members are mapped via the aws-auth ConfigMap.
+# ---------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admin-binding
+  labels:
+    project: fintech-secure
+subjects:
+  - kind: Group
+    name: platform-admins
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ---------------------------------------------------------------------------
+# ClusterRoleBinding: developer-binding
+# Grants developer-level access cluster-wide to the developers group.
+# ---------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: developer-binding
+  labels:
+    project: fintech-secure
+subjects:
+  - kind: Group
+    name: developers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: developer-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ---------------------------------------------------------------------------
+# ClusterRoleBinding: viewer-binding
+# Grants read-only access cluster-wide to the viewers group.
+# ---------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: viewer-binding
+  labels:
+    project: fintech-secure
+subjects:
+  - kind: Group
+    name: viewers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: viewer-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ---------------------------------------------------------------------------
+# RoleBinding: app-deployer-binding (fintech-app namespace)
+# Grants app-deployer role to the developers group within the app namespace.
+# ---------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-deployer-binding
+  namespace: fintech-app
+  labels:
+    project: fintech-secure
+subjects:
+  - kind: Group
+    name: developers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: app-deployer
+  apiGroup: rbac.authorization.k8s.io
+---
+# ---------------------------------------------------------------------------
+# RoleBinding: app-viewer-binding (fintech-app namespace)
+# Grants app-viewer role to the viewers group within the app namespace.
+# ---------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-viewer-binding
+  namespace: fintech-app
+  labels:
+    project: fintech-secure
+subjects:
+  - kind: Group
+    name: viewers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: app-viewer
+  apiGroup: rbac.authorization.k8s.io
+---
+# ---------------------------------------------------------------------------
+# RoleBinding: monitoring-operator-binding (monitoring namespace)
+# Grants monitoring-operator role to platform-admins in the monitoring ns.
+# ---------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: monitoring-operator-binding
+  namespace: monitoring
+  labels:
+    project: fintech-secure
+subjects:
+  - kind: Group
+    name: platform-admins
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: monitoring-operator
+  apiGroup: rbac.authorization.k8s.io

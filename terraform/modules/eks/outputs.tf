@@ -42,3 +42,8 @@ output "node_group_status" {
   description = "Status of the managed node group"
   value       = aws_eks_node_group.main.status
 }
+
+output "node_group_autoscaling_group_name" {
+  description = "Name of the Auto Scaling Group backing the EKS managed node group"
+  value       = try(aws_eks_node_group.main.resources[0].autoscaling_groups[0].name, "")
+}

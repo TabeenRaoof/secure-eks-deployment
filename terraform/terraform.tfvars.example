@@ -22,3 +22,13 @@ enable_flow_logs = true
 
 # Optional override (leave empty to use default: <project>-<env>-backend)
 app_secrets_name = ""
+
+# Phase 7: Container Security
+# Set to false in production so ECR refuses to delete repos with images.
+ecr_force_delete = true
+
+# Phase 8: Monitoring & Logging
+# Provide an email to receive CloudWatch alarm notifications (leave empty to skip).
+# You must click the confirmation email sent by AWS SNS after apply.
+alarm_email               = ""
+enable_container_insights = true

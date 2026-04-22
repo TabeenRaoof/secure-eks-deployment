@@ -1,19 +1,34 @@
+# ---------------------------------------------------------------------------
+# Frontend NetworkPolicy
+# INGRESS:  Allow traffic from the ALB Ingress controller (kube-system/aws-lb)
+#           and any pod labeled app=frontend for service discovery
+# EGRESS:   Allow outbound only to backend pods on port 5000
+# ---------------------------------------------------------------------------
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-frontend-to-backend
-  namespace: default
+  name: frontend-policy
+  namespace: fintech-app
 spec:
   podSelector:
     matchLabels:
-      app: backend
+      app: frontend
   policyTypes:
     - Ingress
+    - Egress
   ingress:
     - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
         - podSelector:
             matchLabels:
-              app: frontend
+              app: backend
       ports:
         - protocol: TCP
           port: 5000

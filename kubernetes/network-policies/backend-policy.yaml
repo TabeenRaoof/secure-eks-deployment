@@ -1,14 +1,64 @@
+# ---------------------------------------------------------------------------
+# Backend NetworkPolicy
+# INGRESS:  Allow traffic only from frontend pods on port 5000
+# EGRESS:   Allow outbound to:
+#             - postgres pods on port 5432
+#             - AWS APIs (Secrets Manager, KMS) on HTTPS 443 (via NAT)
+# ---------------------------------------------------------------------------
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-backend-to-db
-  namespace: default
+  name: backend-policy
+  namespace: fintech-app
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - protocol: TCP
+          port: 5000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: db
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/16  # VPC CIDR — internal traffic must match a pod selector
+      ports:
+        - protocol: TCP
+          port: 443
+---
+# ---------------------------------------------------------------------------
+# Database NetworkPolicy
+# INGRESS:  Allow traffic only from backend pods on port 5432
+# EGRESS:   Fully denied (database should never initiate outbound)
+# ---------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: database-policy
+  namespace: fintech-app
 spec:
   podSelector:
     matchLabels:
       app: db
   policyTypes:
     - Ingress
+    - Egress
   ingress:
     - from:
         - podSelector:

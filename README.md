@@ -20,22 +20,43 @@ For the full architecture design and security justification, see [`docs/architec
 ## Repository Structure
 
 ```
-├── docs/                          # Architecture documentation
-│   ├── architecture-design.md     # Phase 1: Design and security justification
-│   └── architecture-diagram.py    # Generates architecture diagram (requires diagrams lib)
-├── terraform/                     # Phase 2: Infrastructure as Code
-│   ├── main.tf                    # Root module — wires all modules together
-│   ├── variables.tf               # Input variables
-│   ├── outputs.tf                 # Cluster outputs
-│   ├── versions.tf                # Provider version constraints
-│   ├── terraform.tfvars.example   # Example variable values (copy to terraform.tfvars)
+├── backend/                        # Flask API (Python)
+│   ├── Dockerfile                  # Hardened, multi-stage, non-root (UID 1000)
+│   └── app/                        # Application code
+├── frontend/                       # React + nginx
+│   ├── Dockerfile                  # Multi-stage, nginx-unprivileged (UID 101)
+│   └── src/                        # Application code
+├── docs/                           # Documentation
+│   ├── architecture-design.md      # Phase 1
+│   ├── architecture-diagram.py     # Diagram generator
+│   ├── phase4-iam-rbac.md          # Phase 4
+│   ├── phase6-data-security.md     # Phase 6
+│   ├── phase7-container-security.md  # Phase 7
+│   ├── phase8-monitoring-logging.md  # Phase 8
+│   ├── phase9-threat-simulation.md   # Phase 9
+│   └── technical-report.md         # 10-15 page consolidated report
+├── terraform/                      # Infrastructure as Code
+│   ├── main.tf                     # Root — wires all modules together
+│   ├── variables.tf
+│   ├── outputs.tf
 │   └── modules/
-│       ├── vpc/                   # VPC, subnets, NAT, flow logs
-│       ├── iam/                   # IAM roles, IRSA setup
-│       ├── security/              # Security groups, NACLs, KMS
-│       └── eks/                   # EKS cluster, node group, OIDC
-├── kubernetes/                    # Kubernetes manifests (Phase 3+)
-│   └── README.md                  # Guide for application deployment
+│       ├── vpc/                    # VPC, subnets, NAT, flow logs
+│       ├── iam/                    # IAM roles, IRSA, RBAC personas
+│       ├── security/               # Security groups, NACLs, KMS
+│       ├── eks/                    # EKS cluster, nodes, OIDC
+│       ├── container-security/     # ECR with scan-on-push + enhanced scanning
+│       └── monitoring/             # GuardDuty, CloudWatch alarms, Container Insights
+├── kubernetes/                     # Kubernetes manifests
+│   ├── namespaces/                 # fintech-app, monitoring (with PSS labels)
+│   ├── rbac/                       # ClusterRoles, Roles, Bindings, aws-auth, SAs
+│   ├── deployments/                # frontend, backend, postgres
+│   ├── services/                   # ClusterIP services
+│   ├── ingress/                    # ALB ingress with ACM TLS
+│   ├── network-policies/           # Default-deny + tier-to-tier allow
+│   └── monitoring/                 # Prometheus/Grafana Helm values
+├── .github/workflows/              # CI/CD
+│   ├── trivy-scan.yml              # Scans source, images, k8s manifests
+│   └── build-and-push.yml          # Builds + pushes to ECR via OIDC
 └── .gitignore
 ```
 
@@ -67,73 +88,112 @@ Install the following tools before proceeding:
    # Enter your Access Key ID, Secret Access Key, region (us-west-2), and output format (json)
    ```
 
-## Deployment Instructions (Phase 2)
+## Full Deployment Guide
 
-### Step 1: Configure Variables
+End-to-end deployment is a three-part process:
+
+1. **Infrastructure** — Terraform provisions AWS resources (~15-20 min)
+2. **Container images** — Build and push to ECR via CI/CD or manually
+3. **Kubernetes workloads** — `kubectl apply` the manifests in order
+
+### Part 1 — Infrastructure (Terraform)
 
 ```bash
 cd terraform
 cp terraform.tfvars.example terraform.tfvars
-```
-
-Edit `terraform.tfvars` with your values. At minimum, update `public_access_cidrs` to restrict API access to your team's IPs:
-
-```hcl
-public_access_cidrs = ["YOUR.IP.ADDRESS/32"]
-```
-
-### Step 2: Initialize Terraform
-
-```bash
+# Edit terraform.tfvars:
+#   - set public_access_cidrs to YOUR IP (e.g. ["203.0.113.5/32"])
+#   - set alarm_email if you want CloudWatch alarm notifications
 terraform init
+terraform plan      # review ~50 resources
+terraform apply     # ~15-20 min (EKS cluster is the long pole)
 ```
 
-### Step 3: Review the Plan
-
-```bash
-terraform plan
-```
-
-Review the output carefully. You should see approximately 25-30 resources to be created (VPC, subnets, NAT, IGW, EKS cluster, node group, IAM roles, security groups, NACLs, KMS key, flow logs).
-
-### Step 4: Deploy
-
-```bash
-terraform apply
-```
-
-Type `yes` when prompted. Deployment takes approximately 15-20 minutes (EKS cluster creation is the longest step).
-
-### Step 5: Configure kubectl
-
-After deployment completes, configure `kubectl` to connect to your cluster:
+Once complete, configure kubectl:
 
 ```bash
 aws eks update-kubeconfig --region us-west-2 --name fintech-secure-dev
+kubectl get nodes   # should show 2 Ready nodes
 ```
 
-Verify the connection:
+### Part 2 — Build and Push Container Images
+
+**Option A — GitHub Actions (recommended)**
+
+Configure one secret in your GitHub repo: `AWS_GHA_ROLE_ARN` (an IAM role trusted by GitHub OIDC with `AmazonEC2ContainerRegistryPowerUser`). Then:
 
 ```bash
-kubectl get nodes
-kubectl cluster-info
+git push origin main    # triggers .github/workflows/build-and-push.yml
 ```
 
-You should see your managed node group nodes in `Ready` status.
+The workflow builds both images, runs a Trivy CRITICAL-severity gate, and pushes to ECR.
 
-## Post-Deployment Verification
-
-Run these commands to verify the security configuration:
+**Option B — Manual**
 
 ```bash
-# Verify nodes are in private subnets (no public IPs)
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+aws ecr get-login-password --region us-west-2 | \
+  docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com
+
+# Backend
+docker build -t $ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/fintech-secure/backend:latest ./backend
+docker push $ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/fintech-secure/backend:latest
+
+# Frontend
+docker build -t $ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/fintech-secure/frontend:latest ./frontend
+docker push $ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/fintech-secure/frontend:latest
+```
+
+### Part 3 — Kubernetes Workloads
+
+Install the AWS Load Balancer Controller first (required for the ALB Ingress):
+
+```bash
+helm repo add eks https://aws.github.io/eks-charts
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+  -n kube-system --set clusterName=fintech-secure-dev
+```
+
+Update placeholders in the manifests (`<ACCOUNT_ID>`, `<CERTIFICATE_ID>`):
+
+```bash
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+grep -rl '<ACCOUNT_ID>' kubernetes/ | xargs sed -i.bak "s/<ACCOUNT_ID>/$ACCOUNT_ID/g"
+```
+
+Then apply manifests in order (details in [`kubernetes/README.md`](kubernetes/README.md)):
+
+```bash
+kubectl apply -f kubernetes/namespaces/
+kubectl apply -f kubernetes/rbac/
+kubectl apply -f kubernetes/deployments/postgres.yaml
+kubectl apply -f kubernetes/deployments/backend.yaml
+kubectl apply -f kubernetes/deployments/frontend.yaml
+kubectl apply -f kubernetes/services/
+kubectl apply -f kubernetes/ingress/
+kubectl apply -f kubernetes/network-policies/
+```
+
+### Post-Deployment Verification
+
+```bash
+# Nodes in private subnets, no public IPs
 kubectl get nodes -o wide
 
-# Verify cluster info
-aws eks describe-cluster --name fintech-secure-dev --query 'cluster.{Endpoint:endpoint,Version:version,Logging:logging,EncryptionConfig:encryptionConfig}'
+# All pods running and Ready
+kubectl get pods -n fintech-app
 
-# Verify VPC Flow Logs are active
-aws ec2 describe-flow-logs --filter "Name=tag:Project,Values=fintech-secure"
+# Ingress provisioned with ALB
+kubectl get ingress -n fintech-app
+
+# Network Policies active
+kubectl get networkpolicy -n fintech-app
+
+# GuardDuty enabled with EKS audit log monitoring
+aws guardduty list-detectors
+
+# Alarms armed
+aws cloudwatch describe-alarms --alarm-name-prefix fintech-secure-dev
 ```
 
 ## Cost Estimate
@@ -145,95 +205,40 @@ Approximate monthly cost for the default configuration:
 | EKS Cluster | $73/month |
 | EC2 (2x t3.medium) | ~$60/month |
 | NAT Gateway | ~$32/month + data |
-| CloudWatch Logs | ~$5/month |
+| CloudWatch Logs + Container Insights | ~$10/month |
+| GuardDuty (EKS protection) | ~$30/month |
+| ECR (10GB) | ~$1/month |
 | KMS Key | ~$1/month |
-| **Total** | **~$171/month** |
+| **Total** | **~$210/month** |
 
 **Important**: Remember to run `terraform destroy` when you're done to avoid ongoing charges.
 
 ## Teardown
 
-To destroy all resources:
-
 ```bash
+# Remove Kubernetes resources first so the ALB and node group drain cleanly
+kubectl delete -f kubernetes/network-policies/ -f kubernetes/ingress/ -f kubernetes/services/ -f kubernetes/deployments/ --ignore-not-found
+
+# Then destroy AWS infrastructure
 cd terraform
 terraform destroy
 ```
 
-Type `yes` when prompted. This removes all AWS resources created by Terraform.
-
 ---
 
-## Phase 6 Quick Start (Data Security)
+## Phase Implementation Status
 
-This repository includes baseline Phase 6 assets:
-
-- Terraform-managed Secrets Manager secret container (`fintech-secure-dev-backend`)
-- IRSA role policy scoped to the backend secret
-- Backend config support for Secrets Manager (`APP_SECRETS_NAME`)
-- HTTPS ingress template with ACM annotations in `kubernetes/ingress/app-ingress-acm.yaml`
-
-See the full runbook in [`docs/phase6-data-security.md`](docs/phase6-data-security.md).
-
-If you are hosting frontend on Vercel without a custom domain yet, use:
-
-- Frontend env: `VITE_API_URL=http://<eks-alb-dns>/api`
-- Backend secret: `CORS_ORIGINS=https://<your-vercel-domain>`
-
-This allows a working split deployment (Vercel frontend + EKS backend) while keeping the ACM-based TLS ingress configuration ready for a custom domain later.
-
----
-
-## Team Responsibilities — Next Phases
-
-### Phase 3: Application Deployment 
-
-Deploy the multi-tier application into the EKS cluster:
-- Frontend (React or static web)
-- Backend API (Node.js or Python/Flask)
-- Database (RDS PostgreSQL or containerized)
-- Use Kubernetes Deployments, Services, and Ingress
-- See [`kubernetes/README.md`](kubernetes/README.md) for details
-
-### Phase 4: Identity & Access Management 
-
-- Configure Kubernetes RBAC (Roles, RoleBindings)
-- Set up IRSA for application pods (foundation already in `terraform/modules/iam/`)
-- Implement `aws-auth` ConfigMap for cluster access control
-
-### Phase 5: Network Security 
-
-- Apply Kubernetes Network Policies to restrict pod-to-pod communication
-- Review and tighten Security Group rules based on actual traffic patterns
-- Test network isolation between frontend, backend, and database pods
-
-### Phase 6: Data Security 
-
-- Configure TLS/HTTPS for the application (cert-manager + Let's Encrypt or ACM)
-- Store application secrets in AWS Secrets Manager
-- Verify encryption at rest is active for EBS and any RDS instances
-
-### Phase 7: Container Security 
-
-- Set up Amazon ECR with image scanning
-- Scan images with Trivy in CI/CD
-- Enforce Pod Security Standards (restricted profile)
-- Ensure all containers run as non-root with read-only root filesystems
-
-### Phase 8: Monitoring & Logging 
-
-- Enable CloudWatch Container Insights
-- Optionally deploy Prometheus + Grafana
-- Enable AWS GuardDuty for threat detection
-- Set up CloudWatch alarms for critical metrics
-
-### Phase 9: Threat Simulation (Both)
-
-Simulate at least 2 security scenarios:
-1. Unauthorized access attempt (e.g., access forbidden namespace)
-2. Pod compromise / privilege escalation attempt
-
-Document detection, mitigation, and incident response for each.
+| # | Phase | Status | Key Artifacts |
+|---|-------|--------|--------------|
+| 1 | Architecture Design | Complete | [`docs/architecture-design.md`](docs/architecture-design.md) |
+| 2 | EKS Cluster Deployment | Complete | [`terraform/`](terraform/) |
+| 3 | Application Deployment | Complete | [`kubernetes/deployments/`](kubernetes/deployments/), [`kubernetes/services/`](kubernetes/services/) |
+| 4 | Identity & Access Management | Complete | [`docs/phase4-iam-rbac.md`](docs/phase4-iam-rbac.md), [`kubernetes/rbac/`](kubernetes/rbac/) |
+| 5 | Network Security | Complete | [`kubernetes/network-policies/`](kubernetes/network-policies/), [`terraform/modules/security/`](terraform/modules/security/) |
+| 6 | Data Security | Complete | [`docs/phase6-data-security.md`](docs/phase6-data-security.md), [`kubernetes/ingress/`](kubernetes/ingress/) |
+| 7 | Container Security | Complete | [`docs/phase7-container-security.md`](docs/phase7-container-security.md), [`terraform/modules/container-security/`](terraform/modules/container-security/), [`.github/workflows/trivy-scan.yml`](.github/workflows/trivy-scan.yml) |
+| 8 | Monitoring & Logging | Complete | [`docs/phase8-monitoring-logging.md`](docs/phase8-monitoring-logging.md), [`terraform/modules/monitoring/`](terraform/modules/monitoring/) |
+| 9 | Threat Simulation | Complete | [`docs/phase9-threat-simulation.md`](docs/phase9-threat-simulation.md), [`docs/eks_security_report_final.pdf`](docs/eks_security_report_final.pdf) |
 
 ---
 

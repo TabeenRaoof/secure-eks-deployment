@@ -1,0 +1,57 @@
+# Hardened Helm values for kube-prometheus-stack.
+# Apply with:
+#   helm upgrade --install kube-prometheus \
+#     prometheus-community/kube-prometheus-stack \
+#     --namespace monitoring \
+#     --values kubernetes/monitoring/prometheus-values.yaml
+
+fullnameOverride: kube-prom
+
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    retentionSize: 5GiB
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      fsGroup: 2000
+
+grafana:
+  adminPassword: CHANGE_ME_USE_SECRET
+  defaultDashboardsEnabled: true
+  service:
+    type: ClusterIP
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 472
+    fsGroup: 472
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true

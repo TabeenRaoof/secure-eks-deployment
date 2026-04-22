@@ -1,0 +1,60 @@
+# ---------------------------------------------------------------------------
+# Role: app-deployer (fintech-app namespace)
+# Allows managing deployments and services within the application namespace.
+# Intended for CI/CD pipelines or developers deploying application updates.
+# ---------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-deployer
+  namespace: fintech-app
+  labels:
+    project: fintech-secure
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "services", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+# ---------------------------------------------------------------------------
+# Role: app-viewer (fintech-app namespace)
+# Read-only access scoped to the application namespace only.
+# ---------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-viewer
+  namespace: fintech-app
+  labels:
+    project: fintech-secure
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "services", "configmaps", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+# ---------------------------------------------------------------------------
+# Role: monitoring-operator (monitoring namespace)
+# Manage monitoring resources (Prometheus, Grafana deployments, configmaps).
+# ---------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: monitoring-operator
+  namespace: monitoring
+  labels:
+    project: fintech-secure
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "services", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]

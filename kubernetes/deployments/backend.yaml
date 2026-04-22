@@ -1,0 +1,103 @@
+# ---------------------------------------------------------------------------
+# Backend Deployment (Flask API)
+# - Runs as non-root (UID 1000)
+# - Read-only root filesystem with writable /tmp emptyDir
+# - No privilege escalation, all Linux capabilities dropped
+# - Resource limits enforced
+# - Uses IRSA via the app-backend ServiceAccount for AWS Secrets Manager
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: fintech-app
+  labels:
+    app: backend
+    tier: api
+    project: fintech-secure
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        tier: api
+        project: fintech-secure
+    spec:
+      serviceAccountName: app-backend
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          # Replace <ACCOUNT_ID> with your AWS account ID; image pushed to ECR.
+          image: <ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/fintech-secure/backend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          env:
+            - name: AWS_REGION
+              value: us-west-2
+            - name: APP_SECRET_NAME
+              value: fintech-secure-dev-backend
+            - name: LOG_LEVEL
+              value: INFO
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: backend
+                topologyKey: kubernetes.io/hostname

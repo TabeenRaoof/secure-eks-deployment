@@ -1,0 +1,58 @@
+# ---------------------------------------------------------------------------
+# aws-auth ConfigMap
+# Maps AWS IAM principals to Kubernetes RBAC groups.
+#
+# HOW IT WORKS:
+#   When a user or role authenticates to EKS via AWS IAM, the cluster looks
+#   up this ConfigMap to determine which Kubernetes username and groups they
+#   are assigned. The groups then match to ClusterRoleBindings/RoleBindings.
+#
+# BEFORE APPLYING:
+#   1. Replace <ACCOUNT_ID> with your AWS account number.
+#   2. Replace <NODE_ROLE_ARN> with: terraform output node_group_role_arn
+#   3. Add real IAM role/user ARNs for your team members.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapRoles: |
+    # --- Node group role (REQUIRED — do not remove) ---
+    # Allows worker nodes to join the cluster.
+    - rolearn: arn:aws:iam::<ACCOUNT_ID>:role/fintech-secure-dev-eks-node-role
+      username: system:node:{{EC2PrivateDNSName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
+
+    # --- Platform admin role ---
+    # Full cluster access via the platform-admins RBAC group.
+    - rolearn: arn:aws:iam::<ACCOUNT_ID>:role/fintech-secure-platform-admin
+      username: platform-admin
+      groups:
+        - platform-admins
+
+    # --- Developer role ---
+    # Workload management access via the developers RBAC group.
+    - rolearn: arn:aws:iam::<ACCOUNT_ID>:role/fintech-secure-developer
+      username: developer
+      groups:
+        - developers
+
+    # --- Viewer/auditor role ---
+    # Read-only access via the viewers RBAC group.
+    - rolearn: arn:aws:iam::<ACCOUNT_ID>:role/fintech-secure-viewer
+      username: viewer
+      groups:
+        - viewers
+
+  mapUsers: |
+    # Example: grant a specific IAM user admin access.
+    # Uncomment and replace with real values as needed.
+    #
+    # - userarn: arn:aws:iam::<ACCOUNT_ID>:user/admin-user
+    #   username: admin-user
+    #   groups:
+    #     - platform-admins
