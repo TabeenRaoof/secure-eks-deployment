@@ -23,10 +23,12 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH=/install/bin:$PATH \
-    PYTHONPATH=/install/lib/python3.12/site-packages
+    PYTHONPATH=/install/lib/python3.12/site-packages \
+    TMPDIR=/tmp
 
 RUN groupadd --system --gid 1000 appuser \
-    && useradd  --system --uid 1000 --gid appuser --home /app --shell /sbin/nologin appuser
+    && useradd  --system --uid 1000 --gid appuser --home /app --shell /sbin/nologin appuser \
+    && mkdir -p /app && chown -R appuser:appuser /app
 
 WORKDIR /app
 
@@ -39,6 +41,6 @@ USER appuser
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health').read()" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health').read()" || exit 1
 
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--access-logfile", "-", "--error-logfile", "-", "run:app"]

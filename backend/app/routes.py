@@ -43,7 +43,7 @@ def signup():
     db.session.add(user)
     db.session.commit()
 
-    token = create_access_token(identity=user.id)
+    token = create_access_token(identity=str(user.id))
 
     return jsonify({"token": token, "user": user.to_dict()}), 201
 
@@ -58,7 +58,7 @@ def login():
     if user is None or not check_password_hash(user.password_hash, password):
         return jsonify({"message": "Invalid email or password."}), 401
 
-    token = create_access_token(identity=user.id)
+    token = create_access_token(identity=str(user.id))
 
     return jsonify({"token": token, "user": user.to_dict()}), 200
 
