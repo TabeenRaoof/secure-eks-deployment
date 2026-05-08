@@ -28,7 +28,8 @@ For the full architecture design and security justification, see [`docs/architec
 │   └── src/                        # Application code
 ├── docs/                           # Documentation
 │   ├── architecture-design.md      # Phase 1
-│   ├── architecture-diagram.py     # Diagram generator
+│   ├── architecture-diagram.drawio  # Editable architecture diagram (diagrams.net)
+│   ├── architecture-diagram.png     # Exported figure for report / slides
 │   ├── phase4-iam-rbac.md          # Phase 4
 │   ├── phase6-data-security.md     # Phase 6
 │   ├── phase7-container-security.md  # Phase 7
@@ -437,11 +438,6 @@ git checkout feature/my-accidental-work  # switch to your new branch and continu
 
 ---
 
-## Generating the Architecture Diagram
+## Architecture diagram
 
-```bash
-pip install diagrams
-python docs/architecture-diagram.py
-```
-
-This generates `docs/architecture-diagram.png`.
+The canonical figure for the technical report and slides is **`docs/architecture-diagram.png`**, exported from **`docs/architecture-diagram.drawio`** ([diagrams.net](https://app.diagrams.net)). After editing the diagram, export PNG to `docs/architecture-diagram.png` so `technical-report.md` and any Word/PowerPoint versions stay in sync (replace the image in **`docs/technical-report.docx`** manually if you maintain that copy).

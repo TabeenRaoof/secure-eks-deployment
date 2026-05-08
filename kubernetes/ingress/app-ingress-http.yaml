@@ -1,3 +1,8 @@
+# ---------------------------------------------------------------------------
+# HTTP-only Ingress for demo / development.
+# Use this when you don't have an ACM cert + custom domain ready.
+# Apply EITHER this OR app-ingress-acm.yaml, not both (same name).
+# ---------------------------------------------------------------------------
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -7,18 +12,12 @@ metadata:
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/ssl-redirect: "443"
-    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
-    # Replace with your ACM certificate ARN in us-west-2.
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:<ACCOUNT_ID>:certificate/<CERTIFICATE_ID>
-    # Per-Service health checks in services.yaml
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    # Per-Service health checks (backend: /api/health, frontend: /) in services.yaml
     alb.ingress.kubernetes.io/backend-protocol: HTTP
 spec:
   rules:
-    # Replace with your DNS name.
-    - host: fintech.example.com
-      http:
+    - http:
         paths:
           - path: /api
             pathType: Prefix

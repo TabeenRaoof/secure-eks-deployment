@@ -43,8 +43,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: backend
-          # Replace <ACCOUNT_ID> with your AWS account ID; image pushed to ECR.
-          image: <ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/fintech-secure/backend:latest
+          # Replace 180571024040 with your AWS account ID; image pushed to ECR.
+          image: 180571024040.dkr.ecr.us-east-2.amazonaws.com/fintech-secure/backend:latest
           imagePullPolicy: Always
           ports:
             - name: http
@@ -52,9 +52,13 @@ spec:
               protocol: TCP
           env:
             - name: AWS_REGION
-              value: us-west-2
-            - name: APP_SECRET_NAME
+              value: us-east-2
+            - name: APP_SECRETS_NAME
               value: fintech-secure-dev-backend
+            - name: DATABASE_URL
+              value: postgresql://fintech_app:CHANGE_ME_USE_SECRETS_MANAGER@postgres.fintech-app.svc.cluster.local:5432/fintech
+            - name: CORS_ORIGINS
+              value: http://localhost:5173,http://localhost:8080
             - name: LOG_LEVEL
               value: INFO
           resources:

@@ -38,7 +38,9 @@ A fintech startup requires a cloud-native web application that:
 
 ### 1.2 Architecture Overview
 
-![Architecture Diagram](architecture-diagram.png)
+![Figure 1 — Secure cloud-native fintech on AWS EKS (defense in depth)](architecture-diagram.png)
+
+*Figure 1 — Architecture diagram (draw.io source: `architecture-diagram.drawio`; exported PNG committed as `architecture-diagram.png`).*
 
 The solution is organized in three conceptual planes:
 

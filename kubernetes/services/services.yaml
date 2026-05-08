@@ -11,6 +11,8 @@ metadata:
   labels:
     app: frontend
     project: fintech-secure
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /
 spec:
   type: ClusterIP
   selector:
@@ -29,6 +31,8 @@ metadata:
   labels:
     app: backend
     project: fintech-secure
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
 spec:
   type: ClusterIP
   selector:

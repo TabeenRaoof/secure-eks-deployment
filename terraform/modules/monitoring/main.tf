@@ -133,5 +133,19 @@ resource "aws_eks_addon" "cloudwatch_observability" {
   cluster_name = var.cluster_name
   addon_name   = "amazon-cloudwatch-observability"
 
+  # Application Signals (v5+) can auto-instrument pods via mutating webhooks.
+  # The Java autoinstrumentation init container is not Pod Security "restricted"
+  # compliant; our app namespaces enforce restricted, so disable auto-monitor
+  # cluster-wide. Container Insights still works without injecting sidecars.
+  configuration_values = jsonencode({
+    manager = {
+      applicationSignals = {
+        autoMonitor = {
+          monitorAllServices = false
+        }
+      }
+    }
+  })
+
   tags = var.tags
 }

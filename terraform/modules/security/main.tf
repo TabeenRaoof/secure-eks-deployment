@@ -70,8 +70,11 @@ resource "aws_security_group" "eks_nodes" {
   vpc_id      = var.vpc_id
 
   tags = merge(var.tags, {
-    Name                                          = "${var.project_name}-${var.environment}-eks-nodes-sg"
-    "kubernetes.io/cluster/${var.project_name}-${var.environment}" = "owned"
+    Name = "${var.project_name}-${var.environment}-eks-nodes-sg"
+    # Do NOT tag the node SG with kubernetes.io/cluster/<name> = owned.
+    # EKS also adds this tag to the managed cluster SG; two "owned" SGs on
+    # the same ENI breaks the AWS Load Balancer Controller (TargetGroupBinding
+    # expects exactly one cluster-tagged SG per ENI).
   })
 
   lifecycle {

@@ -94,7 +94,7 @@ cd terraform && terraform destroy -auto-approve
 - [ ] Full dry-run completed successfully
 - [ ] All verification commands tested and produce clean output
 - [ ] Threat simulation commands tested (RBAC denial + PSS denial)
-- [ ] Architecture diagram PNG rendered (`python docs/architecture-diagram.py`)
+- [ ] Architecture diagram PNG present (`docs/architecture-diagram.png` — export from `docs/architecture-diagram.drawio` if updated)
 - [ ] Screen recording software tested (OBS Studio, QuickTime, or Loom)
 - [ ] Microphone level checked
 - [ ] Terminal font size bumped to ≥ 16pt for readability
